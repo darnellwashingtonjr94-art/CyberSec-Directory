@@ -1,0 +1,49 @@
+name: Cybersecurity Directory CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Runs every Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+
+jobs:
+  validate-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run Core Validation
+        run: python scripts/validator.py
+
+      - name: Run Secret Scanning
+        run: python scripts/scan_secrets.py
+
+      - name: Run Link Linter
+        run: python scripts/lint_docs.py
+
+      - name: Generate Reports and Metrics
+        run: |
+          python scripts/generate_report.py
+          python scripts/merge_master_report.py
+          python scripts/calculate_letter_grades.py
+
+      - name: Check for Uncommitted Changes
+        run: |
+          git status
+          git diff --exit-code || echo "Generated files updated."
