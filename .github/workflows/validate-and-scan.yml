@@ -1,0 +1,5 @@
+      - name: Ensure Data Directory Exists
+        run: |
+          mkdir -p data
+          touch data/metrics.csv
+          echo "{}" > data/institutions.json
